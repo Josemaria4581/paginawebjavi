@@ -590,8 +590,10 @@ async function saveAnimal(e) {
         showToast('Rellena los campos obligatorios', 'warning');
         return;
     }
-    const animalData = { crotalCompleto, crotal, raza, sexo, fechaNacimiento, tipo,
-        madreCrotal: tipo === 'becerro' ? madreCrotal : '', notas, estado };
+    const animalData = {
+        crotalCompleto, crotal, raza, sexo, fechaNacimiento, tipo,
+        madreCrotal: tipo === 'becerro' ? madreCrotal : '', notas, estado
+    };
     try {
         if (editId) {
             const { data, error } = await supabaseClient.from('animals')
@@ -649,7 +651,7 @@ function editAnimal() {
 // DELETE
 // ============================
 function deleteAnimal() {
-    closeModal();
+    document.getElementById('detailModal').classList.add('hidden');
     document.getElementById('confirmModal').classList.remove('hidden');
 }
 
