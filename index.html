@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1">
+    <meta name="description" content="Gestión de finca ganadera - Control de vacas y becerros">
+    <meta name="theme-color" content="#1a2e1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Mi Finca - Gestión Ganadera</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐄</text></svg>">
+    <link rel="apple-touch-icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐄</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Splash Screen -->
+    <div id="splash" class="splash">
+        <div class="splash-content">
+            <div class="splash-icon">🐄</div>
+            <h1 class="splash-title">Mi Finca</h1>
+            <p class="splash-subtitle">Gestión Ganadera</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="app" class="app hidden">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="header-title">Mi Finca</h1>
+            </div>
+            <div class="header-right">
+                <button class="icon-btn" id="btnSearch" onclick="toggleSearch()" aria-label="Buscar">
+                    <span class="material-icons-round">search</span>
+                </button>
+                <button class="icon-btn" id="btnMenu" onclick="toggleMenu()" aria-label="Menú">
+                    <span class="material-icons-round">more_vert</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="search-bar hidden" id="searchBar">
+            <span class="material-icons-round search-icon">search</span>
+            <input type="text" id="searchInput" placeholder="Buscar por crotal..." oninput="filterAnimals()">
+            <button class="icon-btn" onclick="clearSearch()">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+
+        <!-- Dropdown Menu -->
+        <div class="dropdown-menu hidden" id="dropdownMenu">
+            <button onclick="exportData()"><span class="material-icons-round">download</span> Exportar datos</button>
+            <button onclick="importDataPrompt()"><span class="material-icons-round">upload</span> Importar
+                datos</button>
+            <button onclick="showStats()"><span class="material-icons-round">bar_chart</span> Estadísticas</button>
+        </div>
+
+        <!-- Stats Panel -->
+        <div class="stats-panel hidden" id="statsPanel">
+            <div class="stats-header">
+                <h2>Estadísticas</h2>
+                <button class="icon-btn" onclick="hideStats()">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+
+        <!-- Tab Content: Lists -->
+        <main class="main-content" id="mainContent">
+            <!-- Sort Controls -->
+            <div class="sort-controls" id="sortControls">
+                <div class="sort-label">Ordenar por:</div>
+                <div class="sort-buttons">
+                    <button class="sort-btn active" data-sort="crotal" onclick="changeSortBy('crotal')">
+                        <span class="material-icons-round">tag</span> Crotal
+                    </button>
+                    <button class="sort-btn" data-sort="fecha" onclick="changeSortBy('fecha')">
+                        <span class="material-icons-round">calendar_today</span> Fecha
+                    </button>
+                    <button class="sort-btn sort-dir" onclick="toggleSortDir()">
+                        <span class="material-icons-round" id="sortDirIcon">arrow_upward</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Animal Count -->
+            <div class="animal-count" id="animalCount"></div>
+
+            <!-- Animal List -->
+            <div class="animal-list" id="animalList"></div>
+        </main>
+
+        <!-- Tab Content: Add Form -->
+        <div class="form-container hidden" id="formContainer">
+            <div class="form-header">
+                <h2 id="formTitle">Añadir Animal</h2>
+            </div>
+            <form id="animalForm" onsubmit="saveAnimal(event)">
+                <input type="hidden" id="editId" value="">
+
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="tipo" value="vaca" checked onchange="onTipoChange()">
+                            <span class="radio-custom"></span>
+                            <span>🐄 Vaca</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="tipo" value="toro" onchange="onTipoChange()">
+                            <span class="radio-custom"></span>
+                            <span>🐂 Toro</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="tipo" value="becerro" onchange="onTipoChange()">
+                            <span class="radio-custom"></span>
+                            <span>🐮 Becerro</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="crotal">Crotal (Abreviado) *</label>
+                    <input type="text" id="crotal" required placeholder="Ej: 2896">
+                </div>
+
+                <div class="form-group">
+                    <label for="crotalCompleto">Crotal Completo (Opcional)</label>
+                    <input type="text" id="crotalCompleto" placeholder="Ej: ES081009960180">
+                </div>
+
+                <div class="form-group">
+                    <label for="fechaNacimiento">Fecha de Nacimiento *</label>
+                    <input type="date" id="fechaNacimiento" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Sexo *</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="sexo" value="Hembra" checked>
+                            <span class="radio-custom"></span>
+                            <span>♀ Hembra</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="sexo" value="Macho">
+                            <span class="radio-custom"></span>
+                            <span>♂ Macho</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group" id="razaGroup">
+                    <label for="raza">Raza</label>
+                    <select id="raza">
+                        <option value="Limousine">Limousine</option>
+                        <option value="Blonde aquitani">Blonde aquitani</option>
+                        <option value="Cruzada">Cruzada</option>
+                        <option value="Otra">Otra</option>
+                    </select>
+                </div>
+
+                <div class="form-group hidden" id="madreGroup">
+                    <label for="madreCrotal">Crotal de la Madre</label>
+                    <input type="text" id="madreCrotal" placeholder="Ej: 8312">
+                </div>
+
+                <div class="form-group">
+                    <label for="notas">Notas</label>
+                    <textarea id="notas" rows="3" placeholder="Observaciones, estado, etc."></textarea>
+                </div>
+
+                <div class="form-group" id="estadoGroup">
+                    <label>Estado</label>
+                    <div class="radio-group">
+                        <label class="radio-option">
+                            <input type="radio" name="estado" value="activa" checked>
+                            <span class="radio-custom"></span>
+                            <span>✅ Activa</span>
+                        </label>
+                        <label class="radio-option">
+                            <input type="radio" name="estado" value="baja">
+                            <span class="radio-custom"></span>
+                            <span>❌ Baja</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="cancelForm()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">Guardar</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-tab="vacas" onclick="switchTab('vacas')">
+                <span class="material-icons-round">pets</span>
+                <span class="nav-label">Vacas</span>
+            </button>
+            <button class="nav-item" data-tab="becerros" onclick="switchTab('becerros')">
+                <span class="material-icons-round">child_care</span>
+                <span class="nav-label">Becerros</span>
+            </button>
+            <button class="nav-item nav-add" data-tab="add" onclick="switchTab('add')">
+                <span class="material-icons-round">add</span>
+            </button>
+            <button class="nav-item" data-tab="toros" onclick="switchTab('toros')">
+                <span class="material-icons-round">military_tech</span>
+                <span class="nav-label">Toros</span>
+            </button>
+            <button class="nav-item" data-tab="todos" onclick="switchTab('todos')">
+                <span class="material-icons-round">list</span>
+                <span class="nav-label">Todos</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Detail Modal -->
+    <div class="modal-overlay hidden" id="detailModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Detalle</h2>
+                <button class="icon-btn" onclick="closeModal()">
+                    <span class="material-icons-round">close</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-actions">
+                <button class="btn btn-danger" onclick="deleteAnimal()">
+                    <span class="material-icons-round">delete</span> Eliminar
+                </button>
+                <button class="btn btn-primary" onclick="editAnimal()">
+                    <span class="material-icons-round">edit</span> Editar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay hidden" id="confirmModal">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h2>Confirmar</h2>
+            </div>
+            <div class="modal-body">
+                <p id="confirmText">¿Estás seguro de que quieres eliminar este animal?</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeConfirm()">Cancelar</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast hidden" id="toast">
+        <span class="material-icons-round toast-icon" id="toastIcon">check_circle</span>
+        <span id="toastText"></span>
+    </div>
+
+    <!-- Import hidden input -->
+    <input type="file" id="importFile" accept=".json" class="hidden" onchange="importData(event)">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
